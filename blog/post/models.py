@@ -9,4 +9,4 @@ class Post(models.Model):
     objects = models.DjongoManager()
 
     def __str__(self):
-        return "{} / {}".format(self.title, self.id)
+        return "{} / {}".format(self.title, self._id)
