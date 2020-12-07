@@ -57,8 +57,6 @@ class MongoDbManager:
         """
         # 데이터를 가져오는거에요.
         cursor = self.database.find({'_id': ObjectId(id)})
-        if cursor == None or cursor == '':
-            return print('값이 없습니다.')
         # _id를 str -> ObjectId로 전환, published_date를 str -> datetime으로 전환
         result = []
         for document in list(cursor):
