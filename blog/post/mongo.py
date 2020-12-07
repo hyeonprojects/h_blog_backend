@@ -63,7 +63,7 @@ class MongoDbManager:
         result = []
         for document in list(cursor):
             document['_id'] = str(document['_id'])
-            # document['published_date'] = str(document['published_date'])
+            document['published_date'] = str(document['published_date'])
             result.append(document)
         self.close()
         return result
