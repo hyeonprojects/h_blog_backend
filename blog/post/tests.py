@@ -1,8 +1,11 @@
 from django.test import TestCase
+from rest_framework.test import APIRequestFactory
+
 from .models import Post
 
 class PostTest(TestCase):
     def setUp(self):
+        factory = APIRequestFactory()
         pass
 
     def test_post(self):

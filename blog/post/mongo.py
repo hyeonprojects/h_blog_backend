@@ -1,9 +1,9 @@
 from pathlib import Path
 from bson.objectid import ObjectId
 from django.core.exceptions import ImproperlyConfigured
-from djongo import models
+from pymongo import MongoClient
 
-import json, traceback, os, pymongo
+import json, traceback, os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -13,7 +13,6 @@ print(os.getcwd())
 with open('key.json') as f:
     secrets = json.loads(f.read())
 
-
 def get_secret(setting, secrets=secrets):
     try:
         return secrets[setting]
@@ -21,60 +20,75 @@ def get_secret(setting, secrets=secrets):
         error_msg = "Set the {0} environment variable".format(setting)
         raise ImproperlyConfigured(error_msg)
 
+# todo : setting 파일데이터를 가져오는 듯, 중복을 최소화 하면 좋겠지만
 
-# todo : setting 파일의 데이터를 불러와서 수정하게 제작핳는 것잉 유용함.
-# todo : 데코레이터로 만든 이 부분을 수정하기.. try cachl
-# connetion 데코레이터!
-def connection(func):
-    def decorator(*args, **kwargs):
-        global blog_collection
-        try:
-            client = pymongo.MongoClient(
-                host=get_secret('database_host'),
-                port=get_secret('database_port'),
-                username=get_secret('database_username'),
-                password=get_secret('database_password'),
-                authSource=get_secret('authSource')
-            )
-            blog_db = client['{}'.format(get_secret('database_name'))]
-            blog_collection = blog_db['{}'.format(get_secret('collection'))]
+class MongoDbManager:
+    def __init__(self):
+        self.host = get_secret('database_host')
+        self.port = get_secret('database_port')
+        self.username = get_secret('database_username')
+        self.password = get_secret('database_password')
+        self.authSource = get_secret('authSource')
+        self.client = None
+        self.database = None
+        self.database = None
 
-            print('Mongo DB Connected')
-            func(*args, **kwargs)
-        except Exception as e:
-            print(traceback.format_exc())
-        finally:
-            client.close()
-            print('Mongo DB Closed')
+    def connection(self):
+        self.client = MongoClient(
+            host=self.host,
+            port=self.port,
+            username=self.username,
+            password=self.password,
+            authSource=self.authSource
+        )
+        self.database = self.client['{}'.format(get_secret('database_name'))]['{}'.format(get_secret('collection'))]
+        print('Mongo Db Connected')
 
+        if self.database == None:
+            assert print(traceback.format_exc())
 
-@connection
-def search_post(id):
-    """
-    Post 내용 물의 값을 mongodb의 _id를 통해서 찾아오는 기능이다.
-    """
-    # 데이터를 가져오는거에요.
-    cursor = blog_collection.find({'_id': ObjectId(id)})
-    # _id를 str -> ObjectId로 전환, published_date를 str -> datetime으로 전환
-    result = []
-    for document in list(cursor):
-        document['_id'] = str(document['_id'])
-        document['published_date'] = str(document['published_date'])
-        result.append(document)
-    return result
+    def close(self):
+        self.client.close()
+        print('Mongo Db Close')
 
+    def post_read(self, id):
+        """
+        Post 내용을 id를 통해서 가져오는 함수
+        """
+        # 데이터를 가져오는거에요.
+        cursor = self.database.find({'_id': ObjectId(id)})
+        if cursor == None or cursor == '':
+            return print('값이 없습니다.')
+        # _id를 str -> ObjectId로 전환, published_date를 str -> datetime으로 전환
+        result = []
+        for document in list(cursor):
+            document['_id'] = str(document['_id'])
+            # document['published_date'] = str(document['published_date'])
+            result.append(document)
+        self.close()
+        return result
 
-@connection
-def update_post(posts, post_data):
-    """
-    mongo db Post 데이터를 넣어준다.
-    """
-    blog_collection.update(posts, post_data, upsert=True)
+    def post_update(self, id, data):
+        """
+        Post 내용을 post를 통해서 데이터를 찾고 그 일부분을 바꾸는거.
+        """
+        database_data = self.post_read(id)[0]
+        database_data['title'] = data['title']
+        database_data['body'] = data['body']
+        database_data['tags'] = data['tags']
+        del database_data['_id']
 
+        self.database.find_one_and_replace(
+            {'_id': ObjectId(id)}, database_data,
+            projection={'_id':False,'published_date':False}
+        )
+        self.close()
+        return database_data
 
-@connection
-def delete_post(id):
-    """
-    mongo db 파일을 만들어 보았습니다.
-    """
-    blog_collection.remove({"_id": ObjectId(id)})
+    def post_delete(self, id):
+        """
+        Post 내용을 id를 통해서 삭제하는 함수
+        """
+        result = self.database.delete_one({'_id': ObjectId(id)})
+        self.close()
+        return print('{}개 삭제되었습니다.'.format(result.deleted_count))
