@@ -51,3 +51,15 @@ def post_detail(request, id):
         mongo.post_delete(id)
         return JsonResponse({'message': '블로그 내용이 삭제되었습니다.'},
                             status=status.HTTP_204_NO_CONTENT)
+
+@api_view(['GET'])
+def tags(request):
+    mongo = MongoDbManager()
+    mongo.connection()
+
+    if request.method == 'GET':
+        posts = mongo.tags_search(request.GET)
+        return JsonResponse(posts, safe=False)
+
+    return JsonResponse({'message': '잘못된 형식의 호출입니다.'},
+            status=status.HTTP_400_BAD_REQUEST)

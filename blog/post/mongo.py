@@ -1,6 +1,6 @@
 from pathlib import Path
 from bson.objectid import ObjectId
-from django.core.exceptions import ImproperlyConfigured
+from django.core.exceptions import ImproperlyConfigured, EmptyResultSet
 from pymongo import MongoClient
 
 import json, traceback, os
@@ -30,7 +30,6 @@ class MongoDbManager:
         self.password = get_secret('database_password')
         self.authSource = get_secret('authSource')
         self.client = None
-        self.database = None
         self.database = None
 
     def connection(self):
@@ -85,8 +84,29 @@ class MongoDbManager:
 
     def post_delete(self, id):
         """
-        Post 내용을 id를 통해서 삭제하는 함수
+        Post 내용을 id를 통해서 삭제하는 함수 ,
+        MongoDB의 Objectid를 Str형식으로 들어와야 한다.
         """
         result = self.database.delete_one({'_id': ObjectId(id)})
         self.close()
         return print('{}개 삭제되었습니다.'.format(result.deleted_count))
+
+    def tags_search(self, tags):
+        """
+        tags를 통해서 태그가 포함된 내용을 찾는 함수
+        tags는 queryset 형식으로 들어와야한다.
+        """
+        tag = tags['tags'].split(',')
+        if tag == None:
+            raise EmptyResultSet('tags가 없습니다.')
+
+        posts = self.database.find({'tags': { '$all': tag}})
+        self.close()
+
+        result = []
+        for document in list(posts):
+            document['_id'] = str(document['_id'])
+            document['published_date'] = str(document['published_date'])
+            result.append(document)
+        return result
+
