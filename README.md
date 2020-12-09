@@ -14,10 +14,19 @@ Django Rest Framework에서 Json Web Token 방식으로 인증을 만들었습�
 <br>
 나머지 자세한 부분은 requirements.txt를 참고하여주시길 바랍니다.
 
+<h2>실제 운영 환경</h2>
+실제로 지금 프로젝트를 위해서 운영을 하고 있습니다.
+Ubuntu 18.04LTS 네이버클라우드 서버 컴퓨터에서 작업했습니다.<br>
+Nginx를 통해서 HTTP 프로토콜을 구현하였습니다.<br>
+비동기 시스템이 적합하지 않다고 생각해서 WSGI를 gunicorn을 사용했습니다.<br>
+가상화는 miniconda를 활용했습니다.<br>
+- ubuntu + nginx + gunicorn + django
+
 <h2>현재 달성</h2>
 - 기본 설계 구현대로 Rest API 구현 완료<br>
-- Rest API JWT 인증 완료
+- Rest API JWT 인증 완료 <br>
+- 서버 구동 환경에서 테스트 및 기본적인 보안 완료<br>
 
 <h2>해야할 것</h2>
-- 서버 구동 환경에서 테스트 및 전체적인 보안<br>
-- Django Rest Framework 테스트 코드 (가능하면)
+- Django Rest Framework 테스트 코드 (가능하면)<br>
+- 가능하면 https로 구현하기<br>
