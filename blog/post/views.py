@@ -12,6 +12,8 @@ from .mongo import MongoDbManager
 # post_make_* 은 포스트을 만들기 위한 최소의 직렬화 ('title', 'body', 'tags')
 # post_read_* 은 포스트를 읽기 위한 모델의 전부다.. ('_id', 'title', 'body', 'tags','published_date')
 
+
+
 @api_view(['GET','POST'])
 def post(request):
     if request.method == 'GET': # post read all
@@ -24,6 +26,10 @@ def post(request):
         post_make_serializer = PostMakeSerializer(data=posts)
         if post_make_serializer.is_valid():
             post_make_serializer.save()
+            mongo = MongoDbManager
+            mongo.connection()
+            posts = mongo.title_search(title=request.POST.title)
+            post_make_serializer = PostReadSerializer(data=posts)
             return JsonResponse(post_make_serializer.data, status=status.HTTP_201_CREATED)
         return JsonResponse(post_make_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

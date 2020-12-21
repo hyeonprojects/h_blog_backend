@@ -21,6 +21,7 @@ def get_secret(setting, secrets=secrets):
         raise ImproperlyConfigured(error_msg)
 
 # todo : setting 파일데이터를 가져오는 듯, 중복을 최소화 하면 좋겠지만
+# todo : 보안 신경 쓰기.
 
 class MongoDbManager:
     def __init__(self):
@@ -110,3 +111,17 @@ class MongoDbManager:
             result.append(document)
         return result
 
+    def title_search(self, title : str):
+        """
+        Post 내용을 title를 통해서 가져오는 함수
+        """
+        # 데이터를 가져오는거에요.
+        cursor = self.database.find({'name': title})
+
+        result = []
+        for document in list(cursor):
+            document['_id'] = str(document['_id'])
+            document['published_date'] = str(document['published_date'])
+            result.append(document)
+        self.close()
+        return result
